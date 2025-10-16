@@ -1,4 +1,4 @@
-package gay.nullby.carriername
+package com.iquxae.carriername
 
 import android.content.Context
 import android.os.Bundle
@@ -18,7 +18,7 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Toast
 
-import gay.nullby.carriername.databinding.FragmentTargetBinding
+import com.iquxae.carriername.databinding.FragmentTargetBinding
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.Shizuku
 import java.util.Locale

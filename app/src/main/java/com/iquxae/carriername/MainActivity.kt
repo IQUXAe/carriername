@@ -1,4 +1,4 @@
-package gay.nullby.carriername
+package com.iquxae.carriername
 
 import android.os.Build
 import android.os.Bundle
@@ -9,7 +9,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.annotation.RequiresApi
-import gay.nullby.carriername.databinding.ActivityMainBinding
+import com.iquxae.carriername.databinding.ActivityMainBinding
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 
 class MainActivity : AppCompatActivity() {

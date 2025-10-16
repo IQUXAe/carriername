@@ -1,4 +1,4 @@
-package gay.nullby.carriername
+package com.iquxae.carriername
 
 import org.junit.Test
 

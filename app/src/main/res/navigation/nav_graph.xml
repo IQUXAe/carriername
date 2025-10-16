@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/FirstFragment"
-        android:name="gay.nullby.carriername.SetupFragment"
+        android:name="com.iquxae.carriername.SetupFragment"
         android:label="@string/setup_fragment_label"
         tools:layout="@layout/fragment_setup">
 
@@ -17,7 +17,7 @@
     </fragment>
     <fragment
         android:id="@+id/TargetFragment"
-        android:name="gay.nullby.carriername.TargetFragment"
+        android:name="com.iquxae.carriername.TargetFragment"
         android:label="@string/target_fragment_label"
         tools:layout="@layout/fragment_target">
     </fragment>
