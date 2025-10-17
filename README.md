@@ -5,6 +5,7 @@ Forked version of the original Carrier Vanity Name app with additional functiona
 ## What's New in This Fork
 
 - **SIM Operator Code Modification**: Change numeric operator codes (MCC+MNC) using `setprop gsm.sim.operator.numeric`
+- **Settings Persistence**: Automatically restore carrier names, ISO codes, and SIM operator codes after device reboot
 
 ## Features
 
@@ -14,6 +15,7 @@ Forked version of the original Carrier Vanity Name app with additional functiona
 
 ### Added:
 - Set numeric operator codes for SIM1 and SIM2
+- Automatic restoration of settings after reboot
 
 ## Requirements
 
@@ -35,6 +37,7 @@ Based on [CarrierVanityName](https://github.com/nullbytepl/CarrierVanityName) by
 ## Что добавлено в форке
 
 - **Изменение кодов операторов SIM-карт** через команду `setprop gsm.sim.operator.numeric`
+- **Сохранение настроек**: Автоматическое восстановление имен операторов, ISO кодов и кодов SIM-карт после перезагрузки
 
 ## Функционал
 
@@ -44,6 +47,7 @@ Based on [CarrierVanityName](https://github.com/nullbytepl/CarrierVanityName) by
 
 ### Добавлено:
 - Установка numeric кодов операторов (MCC+MNC) для SIM1 и SIM2
+- Автоматическое восстановление настроек после перезагрузки устройства
 
 
 ## Технические требования

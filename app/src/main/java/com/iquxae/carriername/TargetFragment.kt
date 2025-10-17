@@ -34,6 +34,8 @@ class TargetFragment : Fragment() {
     private var subId2: Int = -1;
 
     private var selectedSub: Int = 1;
+    
+    private lateinit var settingsManager: SettingsManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,6 +49,8 @@ class TargetFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        
+        settingsManager = SettingsManager(requireContext())
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             HiddenApiBypass.addHiddenApiExemptions("")
@@ -85,6 +89,9 @@ class TargetFragment : Fragment() {
             if (sim1Code.isNotEmpty() || sim2Code.isNotEmpty()) {
                 onSetSimCodes(sim1Code, sim2Code)
             }
+            
+            
+            settingsManager.saveSettings(carrierName, isoRegion, sim1Code, sim2Code, selectedSub)
         }
 
         view.findViewById<Button>(R.id.button_reset).setOnClickListener {
@@ -93,11 +100,17 @@ class TargetFragment : Fragment() {
             view.findViewById<EditText>(R.id.iso_region_input).setText("")
             view.findViewById<EditText>(R.id.sim1_numeric_input).setText("")
             view.findViewById<EditText>(R.id.sim2_numeric_input).setText("")
+            
+           
+            settingsManager.clearSettings()
         }
 
         view.findViewById<RadioGroup>(R.id.sub_selection).setOnCheckedChangeListener { _, checkedId -> onSelectSub(checkedId) }
 
         onSelectSub(0)
+        
+       
+        loadSavedSettings(view)
     }
 
     private fun onSetName(text: String, isoRegion: String) {
@@ -212,6 +225,21 @@ class TargetFragment : Fragment() {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to override carrier config at: ${e.stackTraceToString()}")
             Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun loadSavedSettings(view: View) {
+        if (settingsManager.hasSettings()) {
+            view.findViewById<EditText>(R.id.text_entry).setText(settingsManager.getCarrierName())
+            view.findViewById<EditText>(R.id.iso_region_input).setText(settingsManager.getIsoRegion())
+            view.findViewById<EditText>(R.id.sim1_numeric_input).setText(settingsManager.getSim1Code())
+            view.findViewById<EditText>(R.id.sim2_numeric_input).setText(settingsManager.getSim2Code())
+            
+            val savedSub = settingsManager.getSelectedSub()
+            if (savedSub == 2 && subId2 != -1) {
+                view.findViewById<RadioButton>(R.id.sub2_button).isChecked = true
+                selectedSub = 2
+            }
         }
     }
 

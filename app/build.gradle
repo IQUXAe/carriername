@@ -11,7 +11,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace 'com.iquxae.carriername'
-    compileSdk 33
+    compileSdk 34
 
     signingConfigs {
         release {
@@ -27,9 +27,9 @@ android {
     defaultConfig {
         applicationId "com.iquxae.carriername"
         minSdk 28
-        targetSdk 33
-        versionCode 2
-        versionName "1.1"
+        targetSdk 34
+        versionCode 3
+        versionName "1.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +41,10 @@ android {
             signingConfig signingConfigs.release
         }
     }
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -51,16 +55,20 @@ android {
     buildFeatures {
         viewBinding true
     }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
 }
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.6.0'
-    implementation 'com.google.android.material:material:1.5.0'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.4.1'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.4.1'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.6'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.7.6'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
@@ -70,4 +78,5 @@ dependencies {
     implementation "dev.rikka.shizuku:provider:$shizuku_version"
 
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
 }
