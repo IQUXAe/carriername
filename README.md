@@ -20,6 +20,7 @@ Forked version of the original Carrier Vanity Name app with additional functiona
 - Android 8.0+ (API 26+)
 - [Shizuku](https://shizuku.rikka.app/) installed and configured
 - System-level permissions via Shizuku
+- **Note:** May not work on all devices (without root)
 
 ## Original Project
 
@@ -49,6 +50,7 @@ Based on [CarrierVanityName](https://github.com/nullbytepl/CarrierVanityName) by
 
 - Android 8.0+ (API 26+)
 - Установленный и настроенный [Shizuku](https://shizuku.rikka.app/)
+- **Примечание:** Может работать не на всех устройствах (без root)
 
 ## Оригинальный проект
 

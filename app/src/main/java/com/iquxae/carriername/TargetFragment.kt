@@ -1,11 +1,11 @@
 package com.iquxae.carriername
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.telephony.CarrierConfigManager
 import android.telephony.SubscriptionManager
-
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -17,8 +17,8 @@ import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Toast
-
 import com.iquxae.carriername.databinding.FragmentTargetBinding
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.Shizuku
 import java.util.Locale
@@ -47,27 +47,28 @@ class TargetFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val subscriptionManager = context?.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as? SubscriptionManager
-        val activeSubscriptions = subscriptionManager?.activeSubscriptionInfoList
         
-        var _subId1: Int? = null
-        var _subId2: Int? = null
-        
-        activeSubscriptions?.let { subs ->
-            if (subs.size > 0) _subId1 = subs[0].subscriptionId
-            if (subs.size > 1) _subId2 = subs[1].subscriptionId
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.addHiddenApiExemptions("")
         }
 
-        Log.d(TAG, "#onViewCreated(): subId1=$subId1 subId2=$subId2")
-
-        _subId1?.let {
-            subId1 = it
-            view.findViewById<RadioButton>(R.id.sub1_button).text = "Network 1 (carrier: ${getCarrierNameBySubId(it)})"
-        }
-        _subId2?.let {
-            subId2 = it
-            view.findViewById<RadioButton>(R.id.sub2_button).text = "Network 2 (carrier: ${getCarrierNameBySubId(it)})"
+        try {
+            val getSubIdMethod = SubscriptionManager::class.java.getDeclaredMethod("getSubId", Int::class.javaPrimitiveType)
+            val _subId1 = getSubIdMethod.invoke(null, 0) as? IntArray
+            val _subId2 = getSubIdMethod.invoke(null, 1) as? IntArray
+            
+            if (_subId1 != null && _subId1.isNotEmpty()) {
+                subId1 = _subId1[0]
+                view.findViewById<RadioButton>(R.id.sub1_button).text = "Network 1 (carrier: ${getCarrierNameBySubId(subId1)})"
+            }
+            if (_subId2 != null && _subId2.isNotEmpty()) {
+                subId2 = _subId2[0]
+                view.findViewById<RadioButton>(R.id.sub2_button).text = "Network 2 (carrier: ${getCarrierNameBySubId(subId2)})"
+            }
+            
+            Log.d(TAG, "#onViewCreated(): subId1=$subId1 subId2=$subId2")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get subscription IDs", e)
         }
 
         if (subId2 == -1) {
@@ -116,26 +117,28 @@ class TargetFragment : Fragment() {
         p.putString(CarrierConfigManager.KEY_CARRIER_CONFIG_VERSION_STRING, /* trans rights! 🏳️‍⚧️*/ ":3")
         p.putBoolean(CarrierConfigManager.KEY_CARRIER_VOLTE_AVAILABLE_BOOL, true)
 
-        val subId: Int;
-        if (selectedSub == 1) {
-            subId = subId1!!
-        } else {
-            subId = subId2!!
+        val subId = if (selectedSub == 1) subId1 else subId2
+        
+        if (subId == -1) {
+            Toast.makeText(context, "No SIM card detected!", Toast.LENGTH_SHORT).show()
+            return
         }
+        
         overrideCarrierConfig(subId, p)
     }
 
     private fun onResetName() {
+        val subId = if (selectedSub == 1) subId1 else subId2
+        
+        if (subId == -1) {
+            Toast.makeText(context, "No SIM card detected!", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         var p = PersistableBundle();
         p.putBoolean(CarrierConfigManager.KEY_CARRIER_NAME_OVERRIDE_BOOL, false)
         p.putString(CarrierConfigManager.KEY_CARRIER_NAME_STRING, "")
-        val subId: Int;
-        if (selectedSub == 1) {
-            subId = subId1!!
-        } else {
-            subId = subId2!!
-        }
-        // Sometimes just setting the override to null doesn't work, so let's first set another override, disabling the name change
+        
         overrideCarrierConfig(subId, p)
         overrideCarrierConfig(subId, null)
     }
@@ -180,12 +183,35 @@ class TargetFragment : Fragment() {
 
     private fun overrideCarrierConfig(subId: Int, p: PersistableBundle?) {
         try {
-            val carrierConfigManager = context?.getSystemService(Context.CARRIER_CONFIG_SERVICE) as? CarrierConfigManager
-            // Используем Shizuku для выполнения системной команды
-            val process = Shizuku.newProcess(arrayOf("am", "broadcast", "-a", "android.telephony.action.CARRIER_CONFIG_CHANGED", "--ei", "subscription", subId.toString()), null, null)
-            process.waitFor()
+            Log.d(TAG, "Getting ServiceManager...")
+            val serviceManagerClass = Class.forName("android.os.ServiceManager")
+            val getService = serviceManagerClass.getDeclaredMethod("getService", String::class.java)
+            val binder = getService.invoke(null, "carrier_config") as android.os.IBinder
+            Log.d(TAG, "Got binder: $binder")
+            
+            Log.d(TAG, "Loading ICarrierConfigLoader...")
+            val stubClass = Class.forName("com.android.internal.telephony.ICarrierConfigLoader\$Stub")
+            val asInterface = stubClass.getDeclaredMethod("asInterface", android.os.IBinder::class.java)
+            
+            Log.d(TAG, "Wrapping binder with Shizuku...")
+            val wrappedBinder = ShizukuBinderWrapper(binder)
+            val loader = asInterface.invoke(null, wrappedBinder)
+            Log.d(TAG, "Got loader: $loader")
+            
+            Log.d(TAG, "Getting overrideConfig method...")
+            val loaderInterface = Class.forName("com.android.internal.telephony.ICarrierConfigLoader")
+            val overrideConfig = loaderInterface.getDeclaredMethod(
+                "overrideConfig",
+                Int::class.javaPrimitiveType,
+                PersistableBundle::class.java,
+                Boolean::class.javaPrimitiveType
+            )
+            Log.d(TAG, "Invoking overrideConfig for subId=$subId")
+            overrideConfig.invoke(loader, subId, p, true)
+            Log.d(TAG, "Successfully overridden carrier config")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to override carrier config", e)
+            Log.e(TAG, "Failed to override carrier config at: ${e.stackTraceToString()}")
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
