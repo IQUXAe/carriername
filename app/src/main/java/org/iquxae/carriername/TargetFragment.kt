@@ -185,9 +185,22 @@ class TargetFragment : Fragment() {
         }
 
         try {
-            val process = Shizuku.newProcess(arrayOf("setprop", "gsm.sim.operator.numeric", codes), null, null)
-            process.waitFor()
-            Toast.makeText(context, "SIM codes set: $codes", Toast.LENGTH_SHORT).show()
+            // Using reflection to access the private newProcess method in Shizuku 13.1.5
+            val shizukuClass = Class.forName("rikka.shizuku.Shizuku")
+            val newProcessMethod = shizukuClass.getDeclaredMethod(
+                "newProcess",
+                Array<String>::class.java,
+                Array<String>::class.java,
+                String::class.java
+            )
+            newProcessMethod.isAccessible = true
+            val process = newProcessMethod.invoke(null, arrayOf("setprop", "gsm.sim.operator.numeric", codes), null, null) as Process
+            val exitCode = process.waitFor()
+            if (exitCode == 0) {
+                Toast.makeText(context, "SIM codes set: $codes", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Failed to set SIM codes (exit code: $exitCode)", Toast.LENGTH_LONG).show()
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to set SIM codes", e)
             Toast.makeText(context, "Failed to set SIM codes: ${e.message}", Toast.LENGTH_LONG).show()

@@ -95,7 +95,16 @@ class RestoreService : Service() {
         
         repeat(3) { attempt ->
             try {
-                val process = Shizuku.newProcess(arrayOf("setprop", "gsm.sim.operator.numeric", codes), null, null)
+                // Using reflection to access the private newProcess method in Shizuku 13.1.5
+                val shizukuClass = Class.forName("rikka.shizuku.Shizuku")
+                val newProcessMethod = shizukuClass.getDeclaredMethod(
+                    "newProcess",
+                    Array<String>::class.java,
+                    Array<String>::class.java,
+                    String::class.java
+                )
+                newProcessMethod.isAccessible = true
+                val process = newProcessMethod.invoke(null, arrayOf("setprop", "gsm.sim.operator.numeric", codes), null, null) as Process
                 process.waitFor()
                 Log.d(TAG, "SIM codes restored: $codes (attempt ${attempt + 1})")
                 Thread.sleep(2000)
