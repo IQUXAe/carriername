@@ -1,4 +1,4 @@
-package com.iquxae.carriername
+package org.iquxae.carriername
 
 import android.content.Context
 import android.os.Build
@@ -17,7 +17,7 @@ import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Toast
-import com.iquxae.carriername.databinding.FragmentTargetBinding
+import org.iquxae.carriername.databinding.FragmentTargetBinding
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.Shizuku

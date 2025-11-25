@@ -1,4 +1,4 @@
-package com.iquxae.carriername
+package org.iquxae.carriername
 
 import android.content.BroadcastReceiver
 import android.content.Context

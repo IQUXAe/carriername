@@ -1,4 +1,4 @@
-package com.iquxae.carriername
+package org.iquxae.carriername
 
 import android.content.Context
 import android.content.SharedPreferences

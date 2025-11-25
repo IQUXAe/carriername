@@ -35,7 +35,7 @@
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
-            
+
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"
@@ -45,7 +45,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-        
+
         <service
             android:name=".RestoreService"
             android:enabled="true"

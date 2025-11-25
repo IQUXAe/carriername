@@ -10,8 +10,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace 'com.iquxae.carriername'
-    compileSdk 34
+    namespace 'org.iquxae.carriername'
+    compileSdk 36
 
     signingConfigs {
         release {
@@ -25,9 +25,9 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.iquxae.carriername"
+        applicationId "org.iquxae.carriername"
         minSdk 28
-        targetSdk 34
+        targetSdk 36
         versionCode 3
         versionName "1.2"
 
@@ -46,11 +46,11 @@ android {
         abortOnError false
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
     buildFeatures {
         viewBinding true
