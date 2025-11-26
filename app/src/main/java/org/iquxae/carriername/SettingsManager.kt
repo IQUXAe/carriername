@@ -18,13 +18,28 @@ class SettingsManager(context: Context) {
         }
     }
     
+    fun saveSwitcherSettings(carrierName: String, countryCode: String, selectedSub: Int) {
+        prefs.edit().apply {
+            putString("switcher_carrier_name", carrierName)
+            putString("switcher_country_code", countryCode)
+            putInt("switcher_selected_sub", selectedSub)
+            putBoolean("has_switcher_settings", true)
+            apply()
+        }
+    }
+    
     fun hasSettings(): Boolean = prefs.getBoolean("has_settings", false)
+    fun hasSwitcherSettings(): Boolean = prefs.getBoolean("has_switcher_settings", false)
     
     fun getCarrierName(): String = prefs.getString("carrier_name", "") ?: ""
     fun getIsoRegion(): String = prefs.getString("iso_region", "") ?: ""
     fun getSim1Code(): String = prefs.getString("sim1_code", "") ?: ""
     fun getSim2Code(): String = prefs.getString("sim2_code", "") ?: ""
     fun getSelectedSub(): Int = prefs.getInt("selected_sub", 1)
+    
+    fun getSwitcherCarrierName(): String = prefs.getString("switcher_carrier_name", "") ?: ""
+    fun getSwitcherCountryCode(): String = prefs.getString("switcher_country_code", "") ?: ""
+    fun getSwitcherSelectedSub(): Int = prefs.getInt("switcher_selected_sub", 1)
     
     fun clearSettings() {
         prefs.edit().clear().apply()

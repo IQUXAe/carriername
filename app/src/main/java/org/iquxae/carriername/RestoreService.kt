@@ -32,19 +32,23 @@ class RestoreService : Service() {
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(NOTIFICATION_ID, createNotification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, createNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, createNotification())
+        }
         
         CoroutineScope(Dispatchers.IO).launch {
-            delay(10000)
+            delay(15000)
             restoreSettings()
-            delay(3000)
+            delay(2000)
             stopSelf()
         }
         
         return START_NOT_STICKY
     }
     
-    private fun restoreSettings() {
+    private suspend fun restoreSettings() {
         val settingsManager = SettingsManager(this)
         
         if (!settingsManager.hasSettings()) {
@@ -52,13 +56,10 @@ class RestoreService : Service() {
             return
         }
         
-       
         if (Shizuku.getBinder() == null) {
             Log.w(TAG, "Shizuku not available, retrying in 10 seconds")
-            CoroutineScope(Dispatchers.IO).launch {
-                delay(10000)
-                restoreSettings()
-            }
+            delay(10000)
+            restoreSettings()
             return
         }
         
@@ -73,9 +74,18 @@ class RestoreService : Service() {
                 restoreSimCodes(sim1Code, sim2Code)
             }
             
-            
             if (carrierName.isNotEmpty() || isoRegion.isNotEmpty()) {
                 restoreCarrierConfig(carrierName, isoRegion, selectedSub)
+            }
+            
+            if (settingsManager.hasSwitcherSettings()) {
+                val switcherCarrier = settingsManager.getSwitcherCarrierName()
+                val switcherCountry = settingsManager.getSwitcherCountryCode()
+                val switcherSub = settingsManager.getSwitcherSelectedSub()
+                
+                if (switcherCarrier.isNotEmpty() || switcherCountry.isNotEmpty()) {
+                    restoreSwitcherConfig(switcherCarrier, switcherCountry, switcherSub)
+                }
             }
             
             Log.d(TAG, "Settings restored successfully")
@@ -84,7 +94,7 @@ class RestoreService : Service() {
         }
     }
     
-    private fun restoreSimCodes(sim1Code: String, sim2Code: String) {
+    private suspend fun restoreSimCodes(sim1Code: String, sim2Code: String) {
         if (sim1Code.isEmpty() && sim2Code.isEmpty()) return
         
         val codes = when {
@@ -95,7 +105,6 @@ class RestoreService : Service() {
         
         repeat(3) { attempt ->
             try {
-                // Using reflection to access the private newProcess method in Shizuku 13.1.5
                 val shizukuClass = Class.forName("rikka.shizuku.Shizuku")
                 val newProcessMethod = shizukuClass.getDeclaredMethod(
                     "newProcess",
@@ -105,12 +114,14 @@ class RestoreService : Service() {
                 )
                 newProcessMethod.isAccessible = true
                 val process = newProcessMethod.invoke(null, arrayOf("setprop", "gsm.sim.operator.numeric", codes), null, null) as Process
-                process.waitFor()
+                withContext(Dispatchers.IO) {
+                    process.waitFor()
+                }
                 Log.d(TAG, "SIM codes restored: $codes (attempt ${attempt + 1})")
-                Thread.sleep(2000)
+                delay(2000)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to restore SIM codes (attempt ${attempt + 1})", e)
-                Thread.sleep(2000)
+                delay(2000)
             }
         }
     }
@@ -141,6 +152,27 @@ class RestoreService : Service() {
             Log.d(TAG, "Carrier config restored for subId: $subId")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to restore carrier config", e)
+        }
+    }
+    
+    private suspend fun restoreSwitcherConfig(carrierName: String, countryCode: String, selectedSub: Int) {
+        try {
+            val getSubIdMethod = SubscriptionManager::class.java.getDeclaredMethod("getSubId", Int::class.javaPrimitiveType)
+            val subIdArray = getSubIdMethod.invoke(null, selectedSub - 1) as? IntArray
+            
+            if (subIdArray == null || subIdArray.isEmpty()) {
+                Log.w(TAG, "No subscription found for slot ${selectedSub - 1}")
+                return
+            }
+            
+            val subId = subIdArray[0]
+            val carrier = if (carrierName.isNotEmpty()) carrierName else null
+            val country = if (countryCode.isNotEmpty()) countryCode else null
+            
+            CarrierSwitcher.setCarrierConfig(subId, country, carrier)
+            Log.d(TAG, "Carrier switcher config restored for subId: $subId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to restore carrier switcher config", e)
         }
     }
     

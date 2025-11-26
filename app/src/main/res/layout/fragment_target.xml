@@ -72,6 +72,64 @@
                 android:inputType="number"
                 android:paddingTop="16dp" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Carrier Switcher (Full operator change)"
+                android:textStyle="bold"
+                android:paddingTop="24dp"
+                android:paddingBottom="8dp" />
+
+            <Spinner
+                android:id="@+id/carrier_preset_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp" />
+
+            <EditText
+                android:id="@+id/carrier_name_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="Custom carrier name"
+                android:inputType="text"
+                android:paddingTop="8dp"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/carrier_country_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="Custom country code (e.g. US)"
+                android:inputType="text"
+                android:maxLength="2"
+                android:paddingTop="8dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="8dp">
+
+                <Button
+                    android:id="@+id/button_switch_carrier"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:text="Switch Carrier" />
+
+                <Button
+                    android:id="@+id/button_reset_carrier"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:text="Reset Carrier" />
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

@@ -12,10 +12,13 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.Spinner
 import android.widget.Toast
 import org.iquxae.carriername.databinding.FragmentTargetBinding
 import org.lsposed.hiddenapibypass.HiddenApiBypass
@@ -33,9 +36,10 @@ class TargetFragment : Fragment() {
     private var subId1: Int = -1;
     private var subId2: Int = -1;
 
-    private var selectedSub: Int = 1;
+    private var selectedSub: Int = 1
     
     private lateinit var settingsManager: SettingsManager
+    private var selectedCarrier: PresetCarriers.CarrierPreset? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -101,8 +105,17 @@ class TargetFragment : Fragment() {
             view.findViewById<EditText>(R.id.sim1_numeric_input).setText("")
             view.findViewById<EditText>(R.id.sim2_numeric_input).setText("")
             
-           
             settingsManager.clearSettings()
+        }
+
+        setupCarrierSpinner(view)
+
+        view.findViewById<Button>(R.id.button_switch_carrier).setOnClickListener {
+            onSwitchCarrier()
+        }
+
+        view.findViewById<Button>(R.id.button_reset_carrier).setOnClickListener {
+            onResetCarrier()
         }
 
         view.findViewById<RadioGroup>(R.id.sub_selection).setOnCheckedChangeListener { _, checkedId -> onSelectSub(checkedId) }
@@ -170,6 +183,132 @@ class TargetFragment : Fragment() {
         val telephonyManager = context!!.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
             ?: return ""
         return telephonyManager.networkOperatorName ?: ""
+    }
+
+    private fun setupCarrierSpinner(view: View) {
+        val spinner = view.findViewById<Spinner>(R.id.carrier_preset_spinner)
+        val carrierNameInput = view.findViewById<EditText>(R.id.carrier_name_input)
+        val countryCodeInput = view.findViewById<EditText>(R.id.carrier_country_input)
+        
+        val groupedCarriers = mutableListOf<String>()
+        PresetCarriers.presets.groupBy { it.region }.forEach { (region, carriers) ->
+            if (region.isNotEmpty()) {
+                val regionName = CountryPresets.countries.find { it.code == region }?.name ?: region
+                groupedCarriers.add("--- $regionName ---")
+                carriers.forEach { groupedCarriers.add("  ${it.name}") }
+            }
+        }
+        groupedCarriers.add("Custom")
+        
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, groupedCarriers)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+        
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selected = groupedCarriers[position]
+                if (selected == "Custom") {
+                    selectedCarrier = PresetCarriers.CarrierPreset("Custom", "", "")
+                    carrierNameInput.visibility = View.VISIBLE
+                    countryCodeInput.visibility = View.VISIBLE
+                } else if (!selected.startsWith("---")) {
+                    val carrierName = selected.trim()
+                    selectedCarrier = PresetCarriers.presets.find { it.name == carrierName }
+                    carrierNameInput.visibility = View.GONE
+                    countryCodeInput.visibility = View.GONE
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        
+        if (settingsManager.hasSwitcherSettings()) {
+            val savedCarrier = settingsManager.getSwitcherCarrierName()
+            val savedCountry = settingsManager.getSwitcherCountryCode()
+            
+            if (savedCarrier.isNotEmpty() || savedCountry.isNotEmpty()) {
+                val preset = PresetCarriers.presets.find { 
+                    it.displayName == savedCarrier && it.region == savedCountry 
+                }
+                
+                if (preset != null) {
+                    val index = groupedCarriers.indexOfFirst { it.trim() == preset.name }
+                    if (index >= 0) {
+                        spinner.setSelection(index)
+                    }
+                } else {
+                    spinner.setSelection(groupedCarriers.size - 1)
+                    carrierNameInput.setText(savedCarrier)
+                    countryCodeInput.setText(savedCountry)
+                }
+            }
+        }
+    }
+
+    private fun onSwitchCarrier() {
+        val subId = if (selectedSub == 1) subId1 else subId2
+        
+        if (subId == -1) {
+            Toast.makeText(context, "No SIM card detected!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (selectedCarrier == null) {
+            Toast.makeText(context, "Select a carrier", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            val carrier: String?
+            val country: String?
+            
+            if (selectedCarrier?.name == "Custom") {
+                val carrierNameInput = view?.findViewById<EditText>(R.id.carrier_name_input)
+                val countryCodeInput = view?.findViewById<EditText>(R.id.carrier_country_input)
+                carrier = carrierNameInput?.text?.toString()?.takeIf { it.isNotEmpty() }
+                country = countryCodeInput?.text?.toString()?.takeIf { it.length == 2 }
+                
+                if (carrier == null && country == null) {
+                    Toast.makeText(context, "Enter carrier name or country code", Toast.LENGTH_SHORT).show()
+                    return
+                }
+            } else {
+                carrier = selectedCarrier?.displayName
+                country = selectedCarrier?.region?.takeIf { it.isNotEmpty() }
+            }
+            
+            CarrierSwitcher.setCarrierConfig(subId, country, carrier)
+            
+            settingsManager.saveSwitcherSettings(
+                carrier ?: "",
+                country ?: "",
+                selectedSub
+            )
+            
+            Toast.makeText(context, "Carrier switched successfully", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to switch carrier", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun onResetCarrier() {
+        val subId = if (selectedSub == 1) subId1 else subId2
+        
+        if (subId == -1) {
+            Toast.makeText(context, "No SIM card detected!", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        try {
+            CarrierSwitcher.resetCarrierConfig(subId)
+            
+            settingsManager.saveSwitcherSettings("", "", selectedSub)
+            
+            Toast.makeText(context, "Carrier reset successfully", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reset carrier", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun onSetSimCodes(sim1Code: String, sim2Code: String) {
